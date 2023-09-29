@@ -121,6 +121,8 @@ SequenceStates::Initialize(
     std::shared_ptr<AllocatedMemory> data;
     auto initial_state_it = initial_state.find(state_config.input_name());
     if (initial_state_it != initial_state.end()) {
+      // If initial state data is specified, use the initial state dimensions.
+      dims = initial_state_it->second.shape_;
       data = std::make_shared<AllocatedMemory>(
           initial_state_it->second.data_->TotalByteSize(),
           TRITONSERVER_MEMORY_CPU, 0);
