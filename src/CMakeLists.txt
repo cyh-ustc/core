@@ -245,7 +245,7 @@ else()
     triton-core
     PROPERTIES
       LINK_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libtritonserver.ldscript
-      LINK_FLAGS "-Wl,--version-script libtritonserver.ldscript"
+      LINK_FLAGS ""
   )
 endif()
 
