@@ -203,12 +203,9 @@ LocalFileSystem::FileModificationTime(
     return Status(Status::Code::INTERNAL, "failed to stat file " + path);
   }
 
-#ifdef _WIN32
-  // In Windows, st_mtime is in time_t
+
   *mtime_ns = st.st_mtime;
-#else
-  *mtime_ns = TIMESPEC_TO_NANOS(st.st_mtim);
-#endif
+
   return Status::Success;
 }
 

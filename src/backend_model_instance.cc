@@ -36,7 +36,7 @@
 #include "cuda_utils.h"
 #include "metrics.h"
 #include "model_config.pb.h"
-#include "numa_utils.h"
+//#include "numa_utils.h"
 #include "server.h"
 #include "shared_library.h"
 #include "triton/common/logging.h"
@@ -237,7 +237,7 @@ TritonModelInstance::CreateInstances(
             std::string("instance_group kind ") +
                 ModelInstanceGroup_Kind_Name(group.kind()) + " not supported");
       }
-      for (const auto is : instance_setting) {
+      for (const auto& is : instance_setting) {
         const auto& kind = std::get<1>(is);
         const auto& id = std::get<2>(is);
 
@@ -249,12 +249,12 @@ TritonModelInstance::CreateInstances(
         } else {
           host_policy = &empty_host_policy;
         }
-        RETURN_IF_ERROR(SetNumaConfigOnThread(*host_policy));
+        //RETURN_IF_ERROR(SetNumaConfigOnThread(*host_policy));
         auto err = CreateInstance(
             model, instance_name, c, kind, id, profile_names, passive,
             policy_name, *host_policy, *(std::get<3>(is)), device_blocking,
             &device_to_thread_map, secondary_devices);
-        RETURN_IF_ERROR(ResetNumaMemoryPolicy());
+        //RETURN_IF_ERROR(ResetNumaMemoryPolicy());
         RETURN_IF_ERROR(err);
 
         // When deploying on GPU, we want to make sure the GPU memory usage
@@ -588,7 +588,7 @@ TritonModelInstance::Schedule(
 Status
 TritonModelInstance::Initialize()
 {
-  RETURN_IF_ERROR(SetNumaConfigOnThread(HostPolicy()));
+  //RETURN_IF_ERROR(SetNumaConfigOnThread(HostPolicy()));
   return Status::Success;
 }
 

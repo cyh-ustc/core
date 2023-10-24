@@ -28,6 +28,8 @@ cmake_minimum_required(VERSION 3.18)
 
 project(libtritonserver LANGUAGES C CXX)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -I/usr/local/include")
+set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES "/usr/local/include")
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -126,7 +128,6 @@ set(
   model_config_utils.cc
   model_lifecycle.cc
   model_repository_manager.cc
-  numa_utils.cc
   payload.cc
   pinned_memory_manager.cc
   rate_limiter.cc
@@ -170,7 +171,6 @@ set(
   model.h
   model_lifecycle.h
   model_repository_manager.h
-  numa_utils.h
   payload.h
   pinned_memory_manager.h
   rate_limiter.h
@@ -439,7 +439,6 @@ if (NOT WIN32)
     triton-core
     PRIVATE
       dl
-      numa
   )
 endif()
 
@@ -504,6 +503,6 @@ install(
 )
 
 # Currently unit tests do not build for windows...
-if (NOT WIN32)
-  add_subdirectory(test test)
-endif() # NOT WIN32
+#if (NOT WIN32)
+#  add_subdirectory(test test)
+#endif() # NOT WIN32

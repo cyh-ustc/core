@@ -28,12 +28,15 @@ cmake_minimum_required(VERSION 3.18)
 
 project(tritoncore LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -I/usr/local/include")
+set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES "/usr/local/include")
 # Control building of shared library vs. only headers and stub. By
 # default only the headers and library stub is built. Set
 # TRITON_CORE_HEADERS_ONLY=OFF to also build libtritonserver.so.
 option(TRITON_CORE_HEADERS_ONLY "Build only headers and stub" ON)
 
-
+find_package(re2 REQUIRED)
 #
 # Triton Server API
 #
@@ -52,6 +55,11 @@ target_include_directories(
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
+
+target_include_directories(
+  triton-core-serverapi
+  INTERFACE  /usr/local/include
+)
 #
 # Triton Backend API
 #
@@ -69,7 +77,10 @@ target_include_directories(
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-
+target_include_directories(
+  triton-core-backendapi
+  INTERFACE  /usr/local/include
+)
 #
 # Triton RepoAgent API
 #
@@ -87,7 +98,10 @@ target_include_directories(
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-
+target_include_directories(
+  triton-core-repoagentapi
+  INTERFACE  /usr/local/include
+)
 #
 # Stub library for libtritonserver.so that stubs Triton Server API and
 # Triton Backend API
@@ -142,7 +156,7 @@ if(NOT TRITON_CORE_HEADERS_ONLY)
   option(TRITON_ENABLE_MALI_GPU "Enable Arm Mali GPU support in server" OFF)
   set(TRITON_MIN_COMPUTE_CAPABILITY "6.0" CACHE STRING
       "The minimum CUDA compute capability supported by Triton" )
-  set(TRITON_EXTRA_LIB_PATHS "" CACHE PATH "Extra library paths for Triton Server build")
+  set(TRITON_EXTRA_LIB_PATHS "/usr/local/" CACHE PATH "Extra library paths for Triton Server build")
 
   # Ensemble
   option(TRITON_ENABLE_ENSEMBLE "Include ensemble support in server" OFF)
@@ -183,8 +197,8 @@ if(NOT TRITON_CORE_HEADERS_ONLY)
   include(FetchContent)
   FetchContent_Declare(
     repo-third-party
-    GIT_REPOSITORY https://github.com/triton-inference-server/third_party.git
-    GIT_TAG ${TRITON_THIRD_PARTY_REPO_TAG}
+    GIT_REPOSITORY https://github.com/cyh-ustc/third_party.git
+    GIT_TAG r22.08
   )
   FetchContent_MakeAvailable(repo-third-party)
 
@@ -245,6 +259,13 @@ if(NOT TRITON_CORE_HEADERS_ONLY)
     set(TRITON_DEPENDS ${TRITON_DEPENDS} cnmem)
   endif() # TRITON_ENABLE_GPU
 
+  ExternalProject_Add(re2
+    PREFIX re2
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/re2"
+    CMAKE_CACHE_ARGS
+      -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/triton-core/re2
+  )
+
   ExternalProject_Add(triton-core
     PREFIX triton-core
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -254,7 +275,7 @@ if(NOT TRITON_CORE_HEADERS_ONLY)
       ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
       ${_CMAKE_ARGS_CMAKE_TOOLCHAIN_FILE}
       ${_CMAKE_ARGS_VCPKG_TARGET_TRIPLET}
-      -DGTEST_ROOT:PATH=${TRITON_THIRD_PARTY_INSTALL_PREFIX}/googletest
+      -Dre2_DIR:PATH=${TRITON_THIRD_PARTY_INSTALL_PREFIX}/re2
       -DgRPC_DIR:PATH=${TRITON_THIRD_PARTY_INSTALL_PREFIX}/grpc/lib/cmake/grpc
       -Dc-ares_DIR:PATH=${TRITON_THIRD_PARTY_INSTALL_PREFIX}/c-ares/lib/cmake/c-ares
       -Dabsl_DIR:PATH=${TRITON_THIRD_PARTY_INSTALL_PREFIX}/absl/lib/cmake/absl
@@ -290,10 +311,9 @@ if(NOT TRITON_CORE_HEADERS_ONLY)
       -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_PREFIX:PATH=${TRITON_INSTALL_PREFIX}
       -DTRITON_VERSION:STRING=${TRITON_VERSION}
-    DEPENDS ${TRITON_DEPENDS}
+    DEPENDS ${TRITON_DEPENDS} re2
   )
 endif() # NOT TRITON_CORE_HEADERS_ONLY
-
 #
 # Install
 #

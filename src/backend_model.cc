@@ -374,7 +374,7 @@ TritonModel::SetConfiguredScheduler()
   // non-variable and if there are no shape tensors... so we don't
   // enable it in that case for efficiency reasons.
   std::unordered_map<std::string, bool> enforce_equal_shape_tensors;
-  for (const auto input : config_.input()) {
+  for (const auto& input : config_.input()) {
     if (input.is_shape_tensor()) {
       enforce_equal_shape_tensors.insert({input.name(), true});
     } else if (
@@ -1160,7 +1160,7 @@ TRITONBACKEND_InputBuffer(
   InferenceRequest::Input* ti =
       reinterpret_cast<InferenceRequest::Input*>(input);
   Status status = ti->DataBuffer(
-      index, buffer, buffer_byte_size, memory_type, memory_type_id);
+      index, buffer, (size_t*)buffer_byte_size, memory_type, memory_type_id);
   if (!status.IsOk()) {
     *buffer = nullptr;
     *buffer_byte_size = 0;
@@ -1200,9 +1200,9 @@ TRITONBACKEND_InputBufferForHostPolicy(
   Status status =
       (host_policy_name == nullptr)
           ? ti->DataBuffer(
-                index, buffer, buffer_byte_size, memory_type, memory_type_id)
+                index, buffer, (size_t*)buffer_byte_size, memory_type, memory_type_id)
           : ti->DataBufferForHostPolicy(
-                index, buffer, buffer_byte_size, memory_type, memory_type_id,
+                index, buffer, (size_t*)buffer_byte_size, memory_type, memory_type_id,
                 host_policy_name);
   if (!status.IsOk()) {
     *buffer = nullptr;

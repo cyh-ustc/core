@@ -28,7 +28,7 @@
 #include "pinned_memory_manager.h"
 
 #include <sstream>
-#include "numa_utils.h"
+//#include "numa_utils.h"
 #include "triton/common/logging.h"
 
 #ifdef TRITON_ENABLE_GPU
@@ -46,7 +46,7 @@ PointerToString(void* ptr)
   ss << ptr;
   return ss.str();
 }
-
+/*
 Status
 ParseIntOption(const std::string& msg, const std::string& arg, int* value)
 {
@@ -60,7 +60,7 @@ ParseIntOption(const std::string& msg, const std::string& arg, int* value)
   }
   return Status::Success;
 }
-
+*/
 }  // namespace
 
 std::unique_ptr<PinnedMemoryManager> PinnedMemoryManager::instance_;
@@ -255,83 +255,6 @@ PinnedMemoryManager::Create(const Options& options)
           Status::Code::INTERNAL,
           "Failed to add Pinned Memory buffer: " + std::string(ex.what()));
     }
-  } else {
-    // Create only one buffer / manager should be created for one node,
-    // and all associated devices should request memory from the shared manager
-    std::map<int32_t, std::string> numa_map;
-    for (const auto host_policy : options.host_policy_map_) {
-      const auto numa_it = host_policy.second.find("numa-node");
-      if (numa_it != host_policy.second.end()) {
-        int32_t numa_id;
-        if (ParseIntOption("Parsing NUMA node", numa_it->second, &numa_id)
-                .IsOk()) {
-          numa_map.emplace(numa_id, host_policy.first);
-        }
-      }
-    }
-    for (const auto node_policy : numa_map) {
-      auto status =
-          SetNumaMemoryPolicy(options.host_policy_map_.at(node_policy.second));
-      if (!status.IsOk()) {
-        LOG_WARNING << "Unable to allocate pinned system memory for NUMA node "
-                    << node_policy.first << ": " << status.AsString();
-        continue;
-      }
-      unsigned long node_mask;
-      status = GetNumaMemoryPolicyNodeMask(&node_mask);
-      if (!status.IsOk()) {
-        LOG_WARNING << "Unable to get NUMA node set for current thread: "
-                    << status.AsString();
-        continue;
-      }
-      void* buffer = nullptr;
-#ifdef TRITON_ENABLE_GPU
-      auto err = cudaHostAlloc(
-          &buffer, options.pinned_memory_pool_byte_size_,
-          cudaHostAllocPortable);
-      if (err != cudaSuccess) {
-        buffer = nullptr;
-        LOG_WARNING << "Unable to allocate pinned system memory, pinned memory "
-                       "pool will not be available: "
-                    << std::string(cudaGetErrorString(err));
-      } else if (options.pinned_memory_pool_byte_size_ != 0) {
-        LOG_INFO << "Pinned memory pool is created at '"
-                 << PointerToString(buffer) << "' with size "
-                 << options.pinned_memory_pool_byte_size_;
-      } else {
-        LOG_INFO << "Pinned memory pool disabled";
-      }
-#endif  // TRITON_ENABLE_GPU
-      ResetNumaMemoryPolicy();
-      try {
-        instance_->AddPinnedMemoryBuffer(
-            std::shared_ptr<PinnedMemory>(new PinnedMemory(
-                buffer, options.pinned_memory_pool_byte_size_)),
-            node_mask);
-      }
-      catch (const std::exception& ex) {
-        return Status(
-            Status::Code::INTERNAL,
-            "Failed to add Pinned Memory buffer with host policy: " +
-                std::string(ex.what()));
-      }
-    }
-    // If no pinned memory is allocated, add an empty entry where all allocation
-    // will be on normal system memory
-    if (instance_->pinned_memory_buffers_.empty()) {
-      try {
-        instance_->AddPinnedMemoryBuffer(
-            std::shared_ptr<PinnedMemory>(new PinnedMemory(
-                nullptr, options.pinned_memory_pool_byte_size_)),
-            0);
-      }
-      catch (const std::exception& ex) {
-        return Status(
-            Status::Code::INTERNAL,
-            "Failed to add empty Pinned Memory entry: " +
-                std::string(ex.what()));
-      }
-    }
   }
   pinned_memory_byte_size_ = options.pinned_memory_pool_byte_size_;
   return Status::Success;
@@ -350,13 +273,7 @@ PinnedMemoryManager::Alloc(
   auto pinned_memory_buffer =
       instance_->pinned_memory_buffers_.begin()->second.get();
   if (instance_->pinned_memory_buffers_.size() > 1) {
-    unsigned long node_mask;
-    if (GetNumaMemoryPolicyNodeMask(&node_mask).IsOk()) {
-      auto it = instance_->pinned_memory_buffers_.find(node_mask);
-      if (it != instance_->pinned_memory_buffers_.end()) {
-        pinned_memory_buffer = it->second.get();
-      }
-    }
+
   }
 
   return instance_->AllocInternal(

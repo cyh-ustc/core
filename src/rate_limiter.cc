@@ -179,7 +179,7 @@ RateLimiter::DequeuePayload(
   }
   PayloadQueue* payload_queue = payload_queues_[instances[0]->Model()].get();
   std::vector<std::shared_ptr<Payload>> merged_payloads;
-  size_t instance_index;
+  size_t instance_index = 0;
   {
     std::unique_lock<std::mutex> lk(payload_queue->mu_);
     payload_queue->cv_.wait(lk, [&instances, &instance_index, payload_queue]() {
@@ -743,7 +743,7 @@ RateLimiter::ResourceManager::UpdateResourceLimits()
                 .emplace(resource_device_map.first, resource_device_map.second)
                 .first;
       } else {
-        for (const auto resource : resource_device_map.second) {
+        for (const auto& resource : resource_device_map.second) {
           auto ritr = ditr->second.find(resource.first);
           if (ritr == ditr->second.end()) {
             ritr = ditr->second.emplace(resource.first, resource.second).first;
