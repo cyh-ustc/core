@@ -52,7 +52,7 @@ TritonRepoAgentLibraryName(const std::string& agent_name)
 #ifdef _WIN32
   return std::string("tritonrepoagent_") + agent_name + ".dll";
 #else
-  return std::string("libtritonrepoagent_") + agent_name + ".so";
+  return std::string("libtritonrepoagent_") + agent_name + ".dylib";
 #endif
 }
 
