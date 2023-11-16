@@ -208,7 +208,7 @@ BackendConfigurationBackendLibraryName(
 #ifdef _WIN32
   *libname = "triton_" + backend_name + ".dll";
 #else
-  *libname = "libtriton_" + backend_name + ".so";
+  *libname = "libtriton_" + backend_name + ".dylib"; // mac os
 #endif
 
   return Status::Success;
